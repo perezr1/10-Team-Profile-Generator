@@ -3,13 +3,20 @@
   "version": "1.0.0",
   "description": "",
   "main": "Employee.test.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --verbose test/*"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "inquirer": "^7.1.0"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0"
   }
 }
