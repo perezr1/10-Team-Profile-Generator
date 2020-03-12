@@ -2,7 +2,7 @@
   "name": "test",
   "version": "1.0.0",
   "description": "",
-  "main": "Employee.test.js",
+  "main": "app.js",
   "directories": {
     "lib": "lib",
     "test": "test"

@@ -1,251 +1,207 @@
-const Manager = require("./lib/Manager");
-const Engineer = require("./lib/Engineer");
-const Intern = require("./lib/Intern");
+const Employee = require("./lib");
 const inquirer = require("inquirer");
-const path = require("path");
 const fs = require("fs");
+let employeesHTML = "";
 
-const outputPath = path.resolve(__dirname, "output", "team.html");
-
-const render = require("./lib/htmlRenderer");
-
-const teamMembers = [];
-const idArray = [];
-
-function appMenu() {
-
-  function createManager() {
-    console.log("Please build your team");
-    inquirer.prompt([
-      {
-        type: "input",
-        name: "managerName",
-        message: "What is your name?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
-      },
-      {
-        type: "input",
-        name: "managerId",
-        message: "What is your id?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid number (1-9).";
-        }
-      },
-      {
-        type: "input",
-        name: "managerEmail",
-        message: "What is your email?",
-        validate: answer => {
-          const pass = answer.match(
-            // cap S means no spaces btw or after
-            /\S+@\S+\.\S+/    
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid email address.";
-        }
-      },
-      {
-        type: "input",
-        name: "managerOfficeNumber",
-        message: "What is your office number?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid number (1-9).";
-        }
+// creates the main four questions to identify who is making the team.
+const empQ = [
+  {
+    name: "name",
+    type: "input",
+    message: "what is your name?",
+    validate: answer => {
+      if (answer !== "") {
+        return true;
       }
-    ]).then(answers => {
-      const manager = new Manager(answers.managerName, answers.managerId, answers.managerEmail, answers.managerOfficeNumber);
-      teamMembers.push(manager);
-      idArray.push(answers.managerId);
-      createTeam();
-    });
-  }
+      return "Please enter at least one character.";
+    }
+  },
 
-  function createTeam() {
-
-    inquirer.prompt([
-      {
-        type: "list",
-        name: "memberChoice",
-        message: "What is the role of the new team member?",
-        choices: [
-          "Engineer",
-          "Intern",
-          "Exit"
-        ]
+  // this asked for the ID while verifying that a valid positive number is input, not sure how to blocke it to negative numbers yet. 
+  {
+    name: "id",
+    type: "input",
+    message: "Please enter your ID number",
+    validate: answer => {
+      const pass = answer.match(/^[1-9]\d*$/);
+      if (pass) {
+        return true;
       }
-    ]).then(userChoice => {
-      switch(userChoice.memberChoice) {
-      case "Engineer":
-        addEngineer();
-        break;
-      case "Intern":
-        addIntern();
-        break;
-      default:
-        buildTeam();
+      return "Please enter a valid number (1-9).";
+    }
+  },
+
+  // This creates the input to ask for the email and verifies that the user input valid info or an error will be presented.
+  {
+    name: "email",
+    type: "input",
+    message: "Please enter your email",
+    validate: answer => {
+      const pass = answer.match(/\S+@\S+\.\S+/);
+      if (pass) {
+        return true;
       }
-    });
+      return "Please enter a valid email address.";
+    }
   }
+];
 
-  function addEngineer() {
-    inquirer.prompt([
-      {
-        type: "input",
-        name: "engineerName",
-        message: "What is the new engineer's name?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
+//  Now that we identify the managers info we can begin asking what they would like to do.
+const questions = {
+  manager: [
+    // this was really hard to use, allow to use the empQ array without changing the  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions
+    ...empQ,
+    {
+      name: "officeNumber",
+      type: "input",
+      message: "Please enter your office number",
+      validate: answer => {
+        const pass = answer.match(/^[1-9]\d*$/);
+        if (pass) {
+          return true;
         }
-      },
-      {
-        type: "input",
-        name: "engineerId",
-        message: "What is the new engineer's id?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            // this checkes  to make sure the ID is not taken and returns error.
-            if (idArray.includes(answer)) {
-              return "This ID is already taken. Please enter a different number.";
-            } else {
-              return true;
-            }
-                        
-          }
-          return "Please enter a valid number (1-9).";
-        }
-      },
-      {
-        type: "input",
-        name: "engineerEmail",
-        message: "What is the new engineer's email?",
-        validate: answer => {
-          const pass = answer.match(
-            //   this is checking to make sure that only numbers and only up to 9 digits.
-            /\S+@\S+\.\S+/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid email address.";
-        }
-      },
-      {
-        type: "input",
-        name: "engineerGithub",
-        message: "What is the new engineer's GitHub username?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
+        return "Please enter a valid number (1-9).";
       }
-    ]).then(answers => {
-      const engineer = new Engineer(answers.engineerName, answers.engineerId, answers.engineerEmail, answers.engineerGithub);
-      teamMembers.push(engineer);
-      idArray.push(answers.engineerId);
-      createTeam();
-    });
-  }
-
-  function addIntern() {
-    inquirer.prompt([
-      {
-        type: "input",
-        name: "internName",
-        message: "What is the intern's name?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
+    }
+  ],
+  new: [
+    {
+      name: "confirm",
+      message: "Would you like to add an employee to your team?",
+      type: "list",
+      choices: ["yes", "no"]
+    }
+  ],
+  another: [
+    {
+      name: "addNew",
+      message: "Add another employee?",
+      type: "list",
+      choices: ["yes", "no"]
+    }
+  ],
+  employeeType: [
+    {
+      name: "add",
+      message: "What is the role of the employee you would you like to add?",
+      type: "list",
+      choices: ["engineer", "intern", "none"]
+    }
+  ],
+  intern: [
+    ...empQ,
+    {
+      name: "school",
+      type: "input",
+      message: "Please enter the intern's school name",
+      validate: answer => {
+        if (answer !== "") {
+          return true;
         }
-      },
-      {
-        type: "input",
-        name: "internId",
-        message: "What is the intern's id?",
-        validate: answer => {
-          const pass = answer.match(
-            /^[1-9]\d*$/
-          );
-          if (pass) {
-            if (idArray.includes(answer)) {
-              return "This ID is already taken. Please enter a different number.";
-            } else {
-              return true;
-            }
-                        
-          }
-          return "Please enter a valid number (1-9).";
-        }
-      },
-      {
-        type: "input",
-        name: "internEmail",
-        message: "What is the intern's email?",
-        validate: answer => {
-          const pass = answer.match(
-            /\S+@\S+\.\S+/
-          );
-          if (pass) {
-            return true;
-          }
-          return "Please enter a valid email address.";
-        }
-      },
-      {
-        type: "input",
-        name: "internSchool",
-        message: "What is the intern's school?",
-        validate: answer => {
-          if (answer !== "") {
-            return true;
-          }
-          return "Please enter at least one character.";
-        }
+        return "Please enter at least one character.";
       }
-    ]).then(answers => {
-      const intern = new Intern(answers.internName, answers.internId, answers.internEmail, answers.internSchool);
-      teamMembers.push(intern);
-      idArray.push(answers.internId);
-      createTeam();
-    });
-  }
+    }
+  ],
+  engineer: [
+    ...empQ,
+    {
+      name: "github",
+      type: "input",
+      message: "Please enter the engineer's github username",
+      validate: answer => {
+        if (answer !== "") {
+          return true;
+        }
+        return "Please enter at least one character.";
+      }
+    }
+  ]
+};
 
-  function buildTeam() {
-    fs.writeFileSync(outputPath, render(teamMembers), "utf-8");
-  }
+init();
 
-  createManager();
-
+// here we call the privious info to be render to the manager.html to render the provide info
+function init() {
+  inquirer
+    .prompt(questions.manager)
+    .then(manager => {
+      fs.readFile("./templates/manager.html", "utf8", (err, data) => {
+        if (err) throw err;
+        const replaced = data
+          .replace("{{name}}", manager.name)
+          .replace("{{id}}", manager.id)
+          .replace("{{email}}", manager.email)
+          .replace("{{officeNumber}}", manager.officeNumber);
+        employeesHTML += replaced;
+        inquirer.prompt(questions.new).then(newEmployee => {
+          if (newEmployee.confirm == "yes") {
+            addEmployee();
+          } else {
+            renderHtml(employeesHTML);
+            console.log("Ok, bye!");
+          }
+        });
+      });
+    })
+    .catch(error => console.log(error));
 }
 
+// here we render the info for the engineer.html info to create the card
+function addEmployee() {
+  inquirer.prompt(questions.employeeType).then(employeeType => {
+    if (employeeType.add === "engineer") {
+      inquirer.prompt(questions.engineer).then(engineer => {
+        fs.readFile("./templates/engineer.html", "utf8", (err, data) => {
+          if (err) throw err;
+          const replaced = data
+            .replace("{{name}}", engineer.name)
+            .replace("{{id}}", engineer.id)
+            .replace("{{email}}", engineer.email)
+            .replace("{{github}}", engineer.github);
+          employeesHTML += replaced;
+          addNew();
+        });
+      });
 
-appMenu();
+      // if the role its not for an engineer then fill out the intern's info
+    } else if ((employeeType.add = "intern")) {
+      inquirer.prompt(questions.intern).then(intern => {
+        fs.readFile("./templates/intern.html", "utf8", (err, data) => {
+          if (err) throw err;
+          const replaced = data
+            .replace("{{name}}", intern.name)
+            .replace("{{id}}", intern.id)
+            .replace("{{email}}", intern.email)
+            .replace("{{school}}", intern.school);
+          employeesHTML += replaced;
+          addNew();
+        });
+      });
+    } else if ((employeeType.add = "none")) {
+      console.log("Ok, bye!");
+    }
+  });
+}
 
+// creates a loop in case the manager wants to add a new role to the team 
+function addNew() {
+  inquirer.prompt(questions.another).then(runAgain => {
+    if (runAgain.addNew == "yes") {
+      addEmployee();
+    } else {
+      renderHtml(employeesHTML);
+    }
+  });
+}
+
+// funtion to connect to the main.html to input all of the above info
+function renderHtml(replaced) {
+  fs.readFile("./templates/main.html", "utf8", (err, data) => {
+    if (err) throw err;
+    let mainHtml = data.replace("{{main}}", replaced);
+    fs.writeFile("./output/main.html", mainHtml, function(err) {
+      if (err) throw err;
+      console.log("Your team is ready to rock!");
+    });
+  });
+}
